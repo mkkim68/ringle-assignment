@@ -21,7 +21,7 @@ class MembershipTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MembershipType
-        fields = ['id', 'name', 'valid_days', 'conversation_limit', 'analysis_limit', 'company']
+        fields = '__all__'
 
 
 class UserMembershipSerializer(serializers.ModelSerializer):
@@ -30,16 +30,7 @@ class UserMembershipSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserMembership
-        fields = [
-            'id',
-            'user',
-            'membership_type',
-            'start_date',
-            'end_date',
-            'remaining_conversations',
-            'remaining_analyses',
-            'is_active',
-        ]
+        fields = '__all__'
 
     is_active = serializers.SerializerMethodField()
 
