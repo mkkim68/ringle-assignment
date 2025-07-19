@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth.models import AbstractUser
 
 class Company(models.Model):
     name = models.CharField(max_length=100)
@@ -8,14 +9,12 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
-class User(models.Model):
+class User(AbstractUser):
     ROLE_CHOICES = (
         ('user', 'User'),
         ('admin', 'Admin'),
         ('b2b', 'B2B')
     )
-    email = models.EmailField(unique=True)
-    password = models.CharField(max_length=120)
     name = models.CharField(max_length=50)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
@@ -35,7 +34,7 @@ class MembershipType(models.Model):
         return self.name
     
 class UserMembership(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='memberships')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='memberships')
     membership_type = models.ForeignKey(MembershipType, on_delete=models.CASCADE)
     start_date = models.DateField(auto_now_add=True)
     end_date = models.DateField()
