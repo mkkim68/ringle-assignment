@@ -20,7 +20,7 @@ class User(AbstractUser):
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return self.email
+        return self.username
 
 
 class MembershipType(models.Model):
@@ -34,7 +34,7 @@ class MembershipType(models.Model):
         return self.name
     
 class UserMembership(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='memberships')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='membership')
     membership_type = models.ForeignKey(MembershipType, on_delete=models.CASCADE)
     start_date = models.DateField(auto_now_add=True)
     end_date = models.DateField()
@@ -50,4 +50,4 @@ class UserMembership(models.Model):
     def save(self, *args, **kwargs):
         if not self.end_date:
             self.end_date = timezone.now().date() + timedelta(days=self.membership_type.valid_days)
-        super().save(**args, **kwargs)
+        super().save(*args, **kwargs)
