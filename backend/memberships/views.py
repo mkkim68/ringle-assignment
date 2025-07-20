@@ -61,10 +61,6 @@ def assign_membership(request):
     if not membership:
         return Response({'error': '멤버십을 찾을 수 없습니다'}, status=status.HTTP_404_NOT_FOUND)
     
-    print(user_id)
-    print(user)             # <User: user1>
-    print(membership)       # <MembershipType: basic>
-    print(membership.valid_days, membership.conversation_limit, membership.analysis_limit)
     if request.method == 'POST':
         user_membership = UserMembership.objects.create(
             user=user,
@@ -97,4 +93,44 @@ def get_my_membership(request):
             'membership': None,
             'message': '현재 멤버십이 없습니다. 구매 후 이용해주세요.'
         }, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def use_coupon(request):
+    kind = request.data.get('kind')
+    user = request.user
+    membership = getattr(user, 'membership', None)
+
+    if not membership:
+        return Response({'error': '멤버십이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
     
+    if not membership.is_active():
+        return Response({'error': '멤버십이 만료되었습니다.'}, status=status.HTTP_403_FORBIDDEN)
+
+    if kind == 'analysis':
+        if membership.membership_type.analysis_limit == -1:
+            return Response({'message': '무제한 멤버십입니다.'}, status=status.HTTP_200_OK)
+        
+        if membership.remaining_analyses <= 0:
+            return Response({"error": '남은 분석 쿠폰이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        membership.remaining_analyses -= 1
+        membership.save()
+
+        return Response({
+            'message': '분석 쿠폰이 차감되었습니다.',
+            'remaining_analyses': membership.remaining_analyses
+        }, status=status.HTTP_200_OK) 
+    elif kind == 'conversation':
+        if membership.membership_type.conversation_limit == -1:
+            return Response({'message': '무제한 멤버십입니다.'}, status=status.HTTP_200_OK)
+        
+        if membership.remaining_conversations <= 0:
+            return Response({"error": '남은 대화 쿠폰이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        membership.remaining_conversations -= 1
+        membership.save()
+
+        return Response({
+            'message': '대화 쿠폰이 차감되었습니다.',
+            'remaining_converstaions': membership.remaining_conversations
+        }, status=status.HTTP_200_OK)
