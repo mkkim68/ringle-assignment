@@ -1,6 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -8,6 +10,23 @@ from datetime import timedelta
 
 from .models import MembershipType, User, UserMembership
 from .serializers import UserMembershipSerializer, CompanySerializer, UserSerializer, MembershipTypeSerializer
+
+
+class CustomLoginView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        token = Token.objects.get(key=response.data['token'])
+        user = token.user
+
+        return Response({
+            'token': token.key,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'name': user.name
+            }
+        })
 
 # 멤버십 생성
 @api_view(['POST'])
@@ -67,8 +86,8 @@ def purchase_membership(request):
 
 # 유저가 본인 멤버십 확인
 @api_view(['GET'])
-def get_my_membership(request, user_pk):
-    user = get_object_or_404(User, pk=user_pk)
+def get_my_membership(request):
+    user = request.user
     
     if hasattr(user, 'membership'):
         serializer = UserMembershipSerializer(user.membership)
@@ -78,3 +97,4 @@ def get_my_membership(request, user_pk):
             'membership': None,
             'message': '현재 멤버십이 없습니다. 구매 후 이용해주세요.'
         }, status=status.HTTP_200_OK)
+    
