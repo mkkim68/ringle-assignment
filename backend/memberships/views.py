@@ -35,16 +35,17 @@ def assign_membership(request):
     user_id = request.data.get('user_id')
     membership_id = request.data.get('membership_id')
     
-    user_qs = User.objects.filter(id=user_id)
-    membership_qs = MembershipType.objects.filter(id=membership_id)
-    if not user_qs.exists():
+    user = User.objects.get(id=user_id)
+    membership = MembershipType.objects.get(id=membership_id)
+    if not user:
         return Response({'error': '유저를 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
-    if not membership_qs.exists():
+    if not membership:
         return Response({'error': '멤버십을 찾을 수 없습니다'}, status=status.HTTP_404_NOT_FOUND)
     
-    user = user_qs.first()
-    membership = membership_qs.first()
-    
+    print(user_id)
+    print(user)             # <User: user1>
+    print(membership)       # <MembershipType: basic>
+    print(membership.valid_days, membership.conversation_limit, membership.analysis_limit)
     if request.method == 'POST':
         user_membership = UserMembership.objects.create(
             user=user,
@@ -53,6 +54,7 @@ def assign_membership(request):
             remaining_conversations=membership.conversation_limit,
             remaining_analyses=membership.analysis_limit
         )
+        print(user_membership.user)
         serializer = UserMembershipSerializer(user_membership)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
