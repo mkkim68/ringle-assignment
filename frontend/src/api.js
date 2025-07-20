@@ -32,3 +32,20 @@ export const getMyMembership = async () => {
     return null;
   }
 };
+
+export const consumeCoupon = async (kind) => {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/use-coupon/`,
+      { kind: kind },
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      }
+    );
+  } catch (err) {
+    console.error("api: 쿠폰 사용 실패");
+  }
+};
