@@ -1,3 +1,5 @@
+from huggingface_hub import InferenceClient
+from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -9,8 +11,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from .models import MembershipType, User, UserMembership
-from .serializers import UserMembershipSerializer, CompanySerializer, UserSerializer, MembershipTypeSerializer
-
+from .serializers import UserMembershipSerializer
 
 class CustomLoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
@@ -134,3 +135,38 @@ def use_coupon(request):
             'message': '대화 쿠폰이 차감되었습니다.',
             'remaining_converstaions': membership.remaining_conversations
         }, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def chat_with_ai(request):
+    user_message = request.data.get('message', '')
+    if not user_message:
+        return Response({'error': '메시지가 비어있습니다.'}, status=400)
+
+    try:
+        client = InferenceClient(
+            api_key=settings.HF_API_TOKEN,
+            provider="hf-inference"
+        )
+
+        completion = client.chat.completions.create(
+            model="HuggingFaceTB/SmolLM3-3B",
+            messages=[
+                {
+                    "role": "user",
+                    "content": user_message
+                }
+            ],
+        )
+
+        full_text = completion.choices[0].message.content
+        if "</think>" in full_text:
+            response_text = full_text.split("</think>")[-1].strip()
+        else:
+            response_text = full_text.strip()
+
+        return Response({'response': response_text}, status=200)
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return Response({'error': str(e)}, status=500)

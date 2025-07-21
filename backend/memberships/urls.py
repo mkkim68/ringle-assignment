@@ -9,4 +9,5 @@ urlpatterns = [
     path('my-membership/', views.get_my_membership, name='get_mine'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('use-coupon/', views.use_coupon, name='use_coupon'),
+    path('chat/', views.chat_with_ai, name='chat')
 ]
