@@ -11,8 +11,6 @@ export const login = async (username, password) => {
 
     const token = res.data.token;
     localStorage.setItem("token", token);
-
-    console.log("로그인 성공");
   } catch (err) {
     console.error("로그인 실패");
   }
@@ -47,5 +45,16 @@ export const consumeCoupon = async (kind) => {
     );
   } catch (err) {
     console.error("api: 쿠폰 사용 실패");
+  }
+};
+
+export const getAIChat = async (userSpeech) => {
+  try {
+    const res = await axios.post(`${BASE_URL}/chat/`, {
+      message: userSpeech,
+    });
+    return res.data.response;
+  } catch (err) {
+    console.error("AI 응답 실패");
   }
 };

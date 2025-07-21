@@ -14,7 +14,6 @@ function Home() {
       getMyMembership().then((data) => {
         if (data) {
           setMembership(data);
-          console.log(data);
         }
       });
     }
