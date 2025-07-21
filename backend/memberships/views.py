@@ -57,24 +57,52 @@ def assign_membership(request):
     
     user = User.objects.get(id=user_id)
     membership = MembershipType.objects.get(id=membership_id)
+
     if not user:
         return Response({'error': '유저를 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
     if not membership:
         return Response({'error': '멤버십을 찾을 수 없습니다'}, status=status.HTTP_404_NOT_FOUND)
+
+    is_b2b_user = user.company is not None
+    is_b2b_membership = membership.company is not None
     
-    if request.method == 'POST':
-        user_membership = UserMembership.objects.create(
-            user=user,
-            membership_type=membership,
-            end_date=timezone.now().date() + timedelta(days=membership.valid_days),
-            remaining_conversations=membership.conversation_limit,
-            remaining_analyses=membership.analysis_limit
-        )
-        print(user_membership.user)
-        serializer = UserMembershipSerializer(user_membership)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    # if request.method == 'POST':
+    #     user_membership = UserMembership.objects.create(
+    #         user=user,
+    #         membership_type=membership,
+    #         end_date=timezone.now().date() + timedelta(days=membership.valid_days),
+    #         remaining_conversations=membership.conversation_limit,
+    #         remaining_analyses=membership.analysis_limit
+    #     )
+    #     print(user_membership.user)
+    #     serializer = UserMembershipSerializer(user_membership)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-    return Response({'error': '허용되지 않은 메서드입니다.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    # return Response({'error': '허용되지 않은 메서드입니다.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    if is_b2b_membership:
+        if not is_b2b_user or user.company != membership.company:
+            return Response(
+                {'error': '이 멤버십은 특정 회사 전용입니다. 유저 회사와 일치하지 않습니다.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    else:
+        if is_b2b_user:
+            return Response(
+                {'error': '이 멤버십은 개인용입니다. 회사 소속 유저에는 할당할 수 없습니다.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    user_membership = UserMembership.objects.create(
+        user=user,
+        membership_type=membership,
+        end_date=timezone.now().date() + timedelta(days=membership.valid_days),
+        remaining_conversations=membership.conversation_limit,
+        remaining_analyses=membership.analysis_limit
+    )
+    
+    serializer = UserMembershipSerializer(user_membership)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # 유저가 멤버십 구매
 @api_view(['POST'])
